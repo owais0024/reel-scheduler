@@ -22,7 +22,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-API = "https://graph.instagram.com/v27.0"
+API = "https://graph.facebook.com/v25.0"
+IG_USER_ID = os.environ.get("IG_USER_ID", "17841429764855705")
 SCHEDULE = "posts.csv"
 RELEASE_TAG = "queue"
 MEDIA_BRANCH = "media"
@@ -171,8 +172,8 @@ def main():
     if not TOKEN:
         fail("The IG_TOKEN secret is missing.")
 
-    me = api("GET", "me", fields="user_id,username")
-    ig_id = me.get("user_id") or me.get("id")
+    ig_id = IG_USER_ID
+    me = api("GET", ig_id, fields="username")
     print(f"Signed in as @{me.get('username')}")
 
     rows, fields = load_rows()
