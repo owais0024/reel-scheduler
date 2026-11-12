@@ -1,9 +1,8 @@
-name: Renew Instagram token
+name: Renew Instagram token (not needed)
 
+# The current Meta system-user token never expires, so this job no longer
+# runs on a schedule. It can still be started by hand if ever needed.
 on:
-  schedule:
-    # 1st and 15th of each month; the token lasts 60 days
-    - cron: "17 3 1,15 * *"
   workflow_dispatch:
 
 permissions:
@@ -12,18 +11,5 @@ permissions:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - run: pip install --quiet requests
-
-      - name: Renew token and save it
-        run: python refresh_token.py
-        env:
-          IG_TOKEN: ${{ secrets.IG_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_PAT }}
+      - run: echo "The Instagram token never expires; nothing to renew."
