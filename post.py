@@ -86,6 +86,8 @@ def load_sheet():
         data = resp.json()
     except ValueError:
         fail(f"The Google Sheet link did not return data: {resp.text[:300]}")
+    if not data.get("ok", True) or "rows" not in data:
+        fail(f"The Google Sheet refused the request ({data.get('error')}). Check the PIN in SHEET_URL.")
     return data["rows"], data.get("files", {})
 
 
