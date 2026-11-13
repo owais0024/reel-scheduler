@@ -99,29 +99,42 @@ def update_sheet(row, **fields):
         print(f"::warning::Could not update the sheet: {e}")
 
 
+MAX_PER_DAY = 3
+DEFAULT_TIME = "05:23"
+
+
+def now_local():
+    return datetime.now(ZoneInfo(TIMEZONE))
+
+
 def today_str():
-    return datetime.now(ZoneInfo(TIMEZONE)).date().isoformat()
+    return now_local().date().isoformat()
+
+
+def when(r):
+    t = (r.get("time") or DEFAULT_TIME).strip()[:5] or DEFAULT_TIME
+    return f"{(r.get('date') or '').strip()} {t}"
 
 
 def pick_due(rows):
-    today = today_str()
+    now = now_local().strftime("%Y-%m-%d %H:%M")
     done = lambda r: (r.get("status") or "").strip().lower().startswith(("posted", "hold"))
     due = [
         r for r in rows
         if not done(r) and (r.get("date") or "").strip() and (r.get("video") or "").strip()
-        and r["date"].strip() <= today
+        and when(r) <= now
     ]
-    due.sort(key=lambda r: r["date"].strip())
-    return (due[0] if due else None), today
+    due.sort(key=when)
+    return (due[0] if due else None), now
 
 
 def posted_today(rows):
+    """True once today's limit of reels has gone out."""
     today = today_str()
-    for r in rows:
-        if (r.get("status") or "").lower().startswith("posted") and \
-                str(r.get("posted_at") or "").startswith(today):
-            return True
-    return False
+    n = sum(1 for r in rows
+            if (r.get("status") or "").lower().startswith("posted")
+            and str(r.get("posted_at") or "").startswith(today))
+    return n >= MAX_PER_DAY
 
 
 def download_from_drive(name, file_id):
@@ -150,6 +163,9 @@ def download_video(name):
 
 def convert(src, out_name):
     """Re-encode to 1080x1920, H.264/AAC, so Instagram accepts it and it stays under 100 MB."""
+    if not shutil.which("ffmpeg"):
+        run(["sudo", "apt-get", "update", "-qq"])
+        run(["sudo", "apt-get", "install", "-y", "-qq", "ffmpeg"])
     out = os.path.join(WORK, out_name)
     run([
         "ffmpeg", "-y", "-loglevel", "error", "-i", src,
@@ -236,18 +252,18 @@ def main():
             st = (r.get("status") or "").strip()
             r["posted_at"] = st[7:17] if st.lower().startswith("posted") else ""
     if posted_today(rows):
-        print("A reel was already posted today. Done.")
+        print(f"Already posted {MAX_PER_DAY} reels today. Done.")
         return
     row, today = pick_due(rows)
     if not row:
-        print(f"Nothing due on {today} (Pakistan time). Done.")
+        print(f"Nothing due at {today} (Pakistan time). Done.")
         return
 
     name = row["video"].strip()
     caption = row["caption"].strip()
     if len(caption) > 2200:
         fail(f"Caption for {name} is {len(caption)} characters; the limit is 2200.")
-    print(f"Due: {row['date']} -> {name}")
+    print(f"Due: {when(row)} -> {name}")
 
     queue = subprocess.run(["gh", "release", "view", RELEASE_TAG, "--repo", REPO,
                             "--json", "assets", "-q", ".assets[].name"],
