@@ -2,8 +2,11 @@ name: Post reel
 
 on:
   schedule:
-    # 00:23 UTC = 7:23 pm US Eastern in winter, 8:23 pm in summer
+    # 00:23 UTC = 5:23 am Pakistan, 7:23 pm New York (winter).
+    # Two backup runs in case GitHub skips one; only one reel posts per day.
     - cron: "23 0 * * *"
+    - cron: "47 1 * * *"
+    - cron: "13 3 * * *"
   workflow_dispatch:
     inputs:
       dry_run:
@@ -41,3 +44,4 @@ jobs:
           IG_TOKEN: ${{ secrets.IG_TOKEN }}
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run || 'false' }}
+          SHEET_URL: ${{ secrets.SHEET_URL }}
