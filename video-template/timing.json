@@ -1,0 +1,77 @@
+{
+ "segs": [
+  {
+   "key": "hook",
+   "text": "There's one marketing habit that quietly kills the blessing in your sales.",
+   "start": 0.1,
+   "end": 4.367
+  },
+  {
+   "key": "scarcity",
+   "text": "Fake scarcity.",
+   "start": 4.667,
+   "end": 5.947
+  },
+  {
+   "key": "reviews",
+   "text": "Reviews nobody really wrote.",
+   "start": 6.247,
+   "end": 8.252
+  },
+  {
+   "key": "hide",
+   "text": "Hiding the flaws.",
+   "start": 8.552,
+   "end": 10.045
+  },
+  {
+   "key": "warn",
+   "text": "The Prophet, peace be upon him, warned about exactly this.",
+   "start": 10.345,
+   "end": 14.164
+  },
+  {
+   "key": "quote",
+   "text": "If they told lies or hid something, then the blessings of their transaction would be lost.",
+   "start": 14.664,
+   "end": 20.467
+  },
+  {
+   "key": "sale",
+   "text": "The sale might still go through.",
+   "start": 21.267,
+   "end": 23.187
+  },
+  {
+   "key": "leave",
+   "text": "But the barakah leaves with it.",
+   "start": 23.487,
+   "end": 25.193
+  },
+  {
+   "key": "honest",
+   "text": "Honest marketing isn't weaker marketing.",
+   "start": 25.493,
+   "end": 28.224
+  },
+  {
+   "key": "real",
+   "text": "Show the real product, the real process, and the real results.",
+   "start": 28.524,
+   "end": 32.407
+  },
+  {
+   "key": "trust",
+   "text": "Clear, true content builds trust. And trust is what turns a viewer into a customer.",
+   "start": 32.707,
+   "end": 38.232
+  },
+  {
+   "key": "cta",
+   "text": "Save this for the next time you write a launch post.",
+   "start": 38.532,
+   "end": 41.433
+  }
+ ],
+ "total": 42.933
+}
