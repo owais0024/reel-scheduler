@@ -1,9 +1,11 @@
 """
-Posts the next due reel from posts.csv to Instagram.
+Posts the next due reel to Instagram.
 
-Runs on GitHub Actions once a day. For the earliest row whose date has
-arrived (US Eastern time) and whose status is empty, it:
-  1. downloads the video from the "queue" release,
+The schedule lives in the Google Sheet "Reel Control Panel" (read through its
+Apps Script web app, secret SHEET_URL). Without SHEET_URL it falls back to
+posts.csv. Runs on GitHub Actions; posts at most one reel per day. For the
+earliest due row that is not Posted or on Hold, it:
+  1. downloads the video from the Drive folder or the "queue" release,
   2. converts it to Instagram's reel format,
   3. puts it on a temporary public branch so Instagram can fetch it,
   4. creates and publishes the reel,
@@ -27,13 +29,14 @@ IG_USER_ID = os.environ.get("IG_USER_ID", "17841429764855705")
 SCHEDULE = "posts.csv"
 RELEASE_TAG = "queue"
 MEDIA_BRANCH = "media"
-TIMEZONE = "America/New_York"
+TIMEZONE = "Asia/Karachi"
 WORK = "work"
 
 TOKEN = os.environ.get("IG_TOKEN", "")
 REPO = os.environ.get("GITHUB_REPOSITORY", "")
 GH_TOKEN = os.environ.get("GH_TOKEN", "")
 DRY_RUN = os.environ.get("DRY_RUN", "").lower() == "true"
+SHEET_URL = os.environ.get("SHEET_URL", "").strip()
 
 
 def fail(message):
@@ -77,15 +80,60 @@ def save_rows(rows, fields):
         writer.writerows(rows)
 
 
+def load_sheet():
+    resp = requests.get(SHEET_URL, timeout=120)
+    try:
+        data = resp.json()
+    except ValueError:
+        fail(f"The Google Sheet link did not return data: {resp.text[:300]}")
+    return data["rows"], data.get("files", {})
+
+
+def update_sheet(row, **fields):
+    try:
+        requests.post(SHEET_URL, data=json.dumps({"row": row["row"], **fields}),
+                      headers={"Content-Type": "text/plain"}, timeout=120)
+    except requests.RequestException as e:
+        print(f"::warning::Could not update the sheet: {e}")
+
+
+def today_str():
+    return datetime.now(ZoneInfo(TIMEZONE)).date().isoformat()
+
+
 def pick_due(rows):
-    today = datetime.now(ZoneInfo(TIMEZONE)).date().isoformat()
+    today = today_str()
+    done = lambda r: (r.get("status") or "").strip().lower().startswith(("posted", "hold"))
     due = [
         r for r in rows
-        if not (r.get("status") or "").strip() and (r.get("date") or "").strip()
+        if not done(r) and (r.get("date") or "").strip() and (r.get("video") or "").strip()
         and r["date"].strip() <= today
     ]
     due.sort(key=lambda r: r["date"].strip())
     return (due[0] if due else None), today
+
+
+def posted_today(rows):
+    today = today_str()
+    for r in rows:
+        if (r.get("status") or "").lower().startswith("posted") and \
+                str(r.get("posted_at") or "").startswith(today):
+            return True
+    return False
+
+
+def download_from_drive(name, file_id):
+    os.makedirs(WORK, exist_ok=True)
+    path = os.path.join(WORK, name)
+    url = f"https://drive.usercontent.google.com/download?id={file_id}&export=download&confirm=t"
+    with requests.get(url, stream=True, timeout=300) as r:
+        r.raise_for_status()
+        with open(path, "wb") as f:
+            for chunk in r.iter_content(1 << 20):
+                f.write(chunk)
+    if os.path.getsize(path) < 10_000:
+        fail(f"Could not download '{name}' from Google Drive.")
+    return path
 
 
 def download_video(name):
@@ -176,54 +224,81 @@ def main():
     me = api("GET", ig_id, fields="username")
     print(f"Signed in as @{me.get('username')}")
 
-    rows, fields = load_rows()
+    files = {}
+    if SHEET_URL:
+        rows, files = load_sheet()
+        print(f"Read {len(rows)} rows from the Google Sheet.")
+    else:
+        rows, fields = load_rows()
+        for r in rows:
+            st = (r.get("status") or "").strip()
+            r["posted_at"] = st[7:17] if st.lower().startswith("posted") else ""
+    if posted_today(rows):
+        print("A reel was already posted today. Done.")
+        return
     row, today = pick_due(rows)
     if not row:
-        print(f"Nothing due on {today} (US Eastern). Done.")
+        print(f"Nothing due on {today} (Pakistan time). Done.")
         return
 
+    name = row["video"].strip()
     caption = row["caption"].strip()
     if len(caption) > 2200:
-        fail(f"Caption for {row['video']} is {len(caption)} characters; the limit is 2200.")
-    print(f"Due: {row['date']} -> {row['video']}")
+        fail(f"Caption for {name} is {len(caption)} characters; the limit is 2200.")
+    print(f"Due: {row['date']} -> {name}")
+
+    queue = subprocess.run(["gh", "release", "view", RELEASE_TAG, "--repo", REPO,
+                            "--json", "assets", "-q", ".assets[].name"],
+                           capture_output=True, text=True).stdout.split()
+    if name not in files and name not in queue:
+        if SHEET_URL and not DRY_RUN:
+            update_sheet(row, status="Video missing")
+        fail(f"'{name}' is not in the Drive folder or the GitHub queue.")
 
     if DRY_RUN:
-        out = subprocess.run(["gh", "release", "view", RELEASE_TAG, "--repo", REPO,
-                              "--json", "assets", "-q", ".assets[].name"],
-                             capture_output=True, text=True)
-        names = out.stdout.split()
-        if row["video"].strip() in names:
-            print("Dry run OK: token works, the video is in the queue, and nothing was posted.")
-        else:
-            fail(f"Dry run: '{row['video']}' is not in the '{RELEASE_TAG}' release yet.")
+        print("Dry run OK: token works, the video was found, and nothing was posted.")
         return
 
-    src = download_video(row["video"].strip())
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
-    video = convert(src, f"reel-{stamp}.mp4")
-    url = publish_to_media_branch(video)
-
     try:
-        container = api("POST", f"{ig_id}/media", media_type="REELS",
-                        video_url=url, caption=caption, share_to_feed="true")
-        wait_until_ready(container["id"])
-        published = api("POST", f"{ig_id}/media_publish", creation_id=container["id"])
-    finally:
-        delete_media_branch()
+        src = download_from_drive(name, files[name]) if name in files else download_video(name)
+        stamp = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+        video = convert(src, f"reel-{stamp}.mp4")
+        url = publish_to_media_branch(video)
+        try:
+            container = api("POST", f"{ig_id}/media", media_type="REELS",
+                            video_url=url, caption=caption, share_to_feed="true")
+            wait_until_ready(container["id"])
+            published = api("POST", f"{ig_id}/media_publish", creation_id=container["id"])
+        finally:
+            delete_media_branch()
+    except SystemExit:
+        if SHEET_URL:
+            update_sheet(row, status="Error: see GitHub Actions log")
+        raise
 
     media_id = published.get("id", "")
-    posted_at = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    print(f"Published reel {media_id} at {posted_at}")
-
-    row["status"] = f"posted {posted_at} id {media_id}"
-    save_rows(rows, fields)
-    commit_schedule(f"Posted {row['video']}")
-
+    link = ""
     try:
-        run(["gh", "release", "delete-asset", RELEASE_TAG, row["video"].strip(),
-             "--repo", REPO, "--yes"])
-    except subprocess.CalledProcessError:
-        print("Could not remove the video from the queue; remove it by hand.")
+        link = api("GET", media_id, fields="permalink").get("permalink", "")
+    except SystemExit:
+        pass
+    posted_at = datetime.now(ZoneInfo(TIMEZONE)).strftime("%Y-%m-%d %H:%M")
+    print(f"Published reel {media_id} at {posted_at} ({link})")
+
+    if SHEET_URL:
+        update_sheet(row, status="Posted", posted_at=posted_at, link=link)
+    else:
+        row["status"] = f"posted {posted_at} PKT id {media_id}"
+        for r in rows:
+            r.pop("posted_at", None)
+        save_rows(rows, fields)
+        commit_schedule(f"Posted {name}")
+
+    if name in queue:
+        try:
+            run(["gh", "release", "delete-asset", RELEASE_TAG, name, "--repo", REPO, "--yes"])
+        except subprocess.CalledProcessError:
+            print("Could not remove the video from the queue; remove it by hand.")
 
 
 if __name__ == "__main__":
