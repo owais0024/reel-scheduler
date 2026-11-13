@@ -137,7 +137,8 @@ textarea{min-height:190px;resize:vertical;line-height:1.45}
 
 <script>
 const API = 'https://script.google.com/macros/s/AKfycbw5mMc9ttzwVWsa6FYZBvBYll3oYVgBkZRWnMoHXEPTbFxEfAHwoFZgd0spURgbqZhyjg/exec';
-const POST_TIME = '5:23 am';
+const SLOTS = ['05:23','18:23','22:23']; // Pakistan time = 7:23 pm, 8:23 am, 12:23 pm New York
+const DEFAULT_TIME = '05:23';
 const MAX_CAPTION = 2200;
 
 const store = {
@@ -163,6 +164,14 @@ function statusOf(r){
   if (s.startsWith('video missing') || !r.video || !S.files[r.video] && s !== 'ready') return ['Video missing','s-miss'];
   return ['Scheduled','s-ready'];
 }
+function tOf(r){ return (r && r.time) || DEFAULT_TIME; }
+function fmtTime(t){ const [h,m] = t.split(':').map(Number); return `${(h%12)||12}:${pad(m)} ${h<12?'am':'pm'}`; }
+function nyTime(date, t){
+  const [y,mo,d] = date.split('-').map(Number); const [h,mi] = t.split(':').map(Number);
+  const utc = new Date(Date.UTC(y, mo-1, d, h-5, mi));
+  return utc.toLocaleString('en-US', { timeZone:'America/New_York', weekday:'short', hour:'numeric', minute:'2-digit' });
+}
+function byWhen(a,b){ return (a.date+' '+tOf(a)).localeCompare(b.date+' '+tOf(b)); }
 function thumbUrl(r){ const id = S.files[r.video]; return id ? `https://drive.google.com/thumbnail?id=${id}&sz=w320` : ''; }
 function firstLine(c){ return (c || '').split('\n').find(l => l.trim()) || 'No caption yet'; }
 function toast(msg){ const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
@@ -204,10 +213,10 @@ function render(){
   const counts = { 'Scheduled':0, 'Video missing':0, 'On hold':0, 'Posted':0, 'Error':0 };
   S.rows.forEach(r => counts[statusOf(r)[0]]++);
   const cls = { 'Scheduled':'s-ready','Video missing':'s-miss','On hold':'s-hold','Posted':'s-posted','Error':'s-err' };
-  const next = S.rows.filter(r => r.date >= todayIso() && statusOf(r)[0] === 'Scheduled').sort((a,b)=>a.date.localeCompare(b.date))[0];
+  const next = S.rows.filter(r => r.date >= todayIso() && statusOf(r)[0] === 'Scheduled').sort(byWhen)[0];
   $('#app').innerHTML = `
   <header class="top">
-    <div class="brand"><div class="mark">${playMark()}</div><div><h1>Reel Planner</h1><small>@edits.by.owais · posts ${POST_TIME} Pakistan time${next ? ` · next: ${fmtShort(next.date)}` : ''}</small></div></div>
+    <div class="brand"><div class="mark">${playMark()}</div><div><h1>Reel Planner</h1><small>@edits.by.owais · up to 3 reels a day${next ? ` · next: ${fmtShort(next.date)}, ${fmtTime(tOf(next))}` : ''}</small></div></div>
     <div class="seg" role="group" aria-label="View">
       <button id="vCal" aria-pressed="${S.view==='calendar'}">Calendar</button>
       <button id="vList" aria-pressed="${S.view==='list'}">List</button>
@@ -220,14 +229,20 @@ function render(){
   $('#vCal').onclick = () => { S.view = 'calendar'; store.set('rp_view','calendar'); render(); };
   $('#vList').onclick = () => { S.view = 'list'; store.set('rp_view','list'); render(); };
   $('#refresh').onclick = load;
-  $('#newBtn').onclick = () => openEditor(null, todayIso() < nextFreeDay() ? nextFreeDay() : todayIso());
+  $('#newBtn').onclick = () => { const s = nextFreeSlot(); openEditor(null, s.date, s.time); };
   S.view === 'calendar' ? renderCalendar() : renderList();
 }
 function fmtShort(s){ const d = parseIso(s); return `${DOW[(d.getDay()+6)%7]} ${d.getDate()} ${MONTHS[d.getMonth()].slice(0,3)}`; }
-function nextFreeDay(){
-  const taken = new Set(S.rows.map(r => r.date)); let d = parseIso(todayIso()); d.setDate(d.getDate()+1);
-  for (let i=0; i<365 && taken.has(iso(d)); i++) d.setDate(d.getDate()+1);
-  return iso(d);
+function nextFreeSlot(from){
+  const taken = new Set(S.rows.map(r => r.date + ' ' + tOf(r)));
+  const nowK = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Karachi' }));
+  const nowStr = `${iso(nowK)} ${pad(nowK.getHours())}:${pad(nowK.getMinutes())}`;
+  let d = parseIso(from || todayIso());
+  for (let i=0; i<400; i++){
+    for (const t of SLOTS){ const k = `${iso(d)} ${t}`; if (k > nowStr && !taken.has(k)) return { date: iso(d), time: t }; }
+    d.setDate(d.getDate()+1);
+  }
+  return { date: todayIso(), time: DEFAULT_TIME };
 }
 
 function cardHtml(r, drag){
@@ -235,7 +250,7 @@ function cardHtml(r, drag){
   return `<button class="card" data-row="${r.row}" ${drag && label !== 'Posted' ? 'draggable="true"' : ''}>
     <span class="thumb" ${t ? `style="background-image:url('${t}')"` : ''}>${t ? '' : '▶'}</span>
     <span class="cbody"><span class="cap">${esc(firstLine(r.caption))}</span>
-      <span class="meta"><span class="chip ${cls}">${label}</span><span class="time">${label==='Posted' && r.posted_at ? esc(r.posted_at.slice(11)) : POST_TIME}</span></span></span>
+      <span class="meta"><span class="chip ${cls}">${label}</span><span class="time">${label==='Posted' && r.posted_at ? esc(r.posted_at.slice(11)) : fmtTime(tOf(r))}</span></span></span>
   </button>`;
 }
 
@@ -243,7 +258,7 @@ function renderCalendar(){
   if (!S.month){ const t = parseIso(todayIso()); S.month = new Date(t.getFullYear(), t.getMonth(), 1); }
   const m = S.month, first = new Date(m.getFullYear(), m.getMonth(), 1);
   const start = new Date(first); start.setDate(1 - ((first.getDay()+6)%7));
-  const byDate = {}; S.rows.forEach(r => (byDate[r.date] = byDate[r.date] || []).push(r));
+  const byDate = {}; S.rows.slice().sort(byWhen).forEach(r => (byDate[r.date] = byDate[r.date] || []).push(r));
   const today = todayIso(); let cells = '';
   for (let i=0; i<42; i++){
     const d = new Date(start); d.setDate(start.getDate()+i); const k = iso(d);
@@ -261,7 +276,7 @@ function renderCalendar(){
   $('#nxt').onclick = () => { S.month = new Date(m.getFullYear(), m.getMonth()+1, 1); renderCalendar(); };
   $('#tod').onclick = () => { S.month = null; renderCalendar(); };
   wireCards();
-  document.querySelectorAll('[data-add]').forEach(b => b.onclick = e => { e.stopPropagation(); openEditor(null, b.dataset.add); });
+  document.querySelectorAll('[data-add]').forEach(b => b.onclick = e => { e.stopPropagation(); const s = nextFreeSlot(b.dataset.add); openEditor(null, s.date === b.dataset.add ? s.date : b.dataset.add, s.date === b.dataset.add ? s.time : SLOTS[0]); });
   document.querySelectorAll('.day').forEach(day => {
     day.addEventListener('dragover', e => { e.preventDefault(); day.classList.add('drop'); });
     day.addEventListener('dragleave', () => day.classList.remove('drop'));
@@ -278,9 +293,9 @@ function renderCalendar(){
 
 function renderList(){
   const today = todayIso();
-  const up = S.rows.filter(r => !statusOf(r)[0].startsWith('Posted')).sort((a,b)=>a.date.localeCompare(b.date));
-  const done = S.rows.filter(r => statusOf(r)[0].startsWith('Posted')).sort((a,b)=>b.date.localeCompare(a.date));
-  const group = (title, rows) => rows.length ? `<section class="lgroup"><h3>${title}</h3><div style="display:flex;flex-direction:column;gap:8px">${rows.map(r => `<div><div class="time" style="margin:0 0 4px 2px">${fmtShort(r.date)}${r.date===today?' · today':''}</div>${cardHtml(r,false)}</div>`).join('')}</div></section>` : '';
+  const up = S.rows.filter(r => !statusOf(r)[0].startsWith('Posted')).sort(byWhen);
+  const done = S.rows.filter(r => statusOf(r)[0].startsWith('Posted')).sort((a,b)=>byWhen(b,a));
+  const group = (title, rows) => rows.length ? `<section class="lgroup"><h3>${title}</h3><div style="display:flex;flex-direction:column;gap:8px">${rows.map(r => `<div><div class="time" style="margin:0 0 4px 2px">${fmtShort(r.date)}${r.date===today?' · today':''} · ${fmtTime(tOf(r))}</div>${cardHtml(r,false)}</div>`).join('')}</div></section>` : '';
   $('#main').innerHTML = `<div class="list">${group('Coming up', up) || '<div class="empty">Nothing scheduled. Tap + New post to add a reel.</div>'}${group('Posted', done)}</div>`;
   wireCards();
 }
@@ -293,7 +308,7 @@ function wireCards(){
 }
 
 /* ---------- editor ---------- */
-function openEditor(r, date){
+function openEditor(r, date, time){
   closeEditor();
   const isNew = !r; const [label, cls] = r ? statusOf(r) : ['New','s-ready'];
   const posted = label === 'Posted'; const id = r && S.files[r.video];
@@ -311,8 +326,12 @@ function openEditor(r, date){
           ${!posted ? `<label class="drop-zone" id="dz"><input type="file" id="file" accept="video/*" hidden><span id="dzText">${id ? 'Replace video' : 'Choose or drop a video'}</span></label>` : ''}
         </div>
       </div>
-      <label class="f">Post date <span class="sub">Goes live about ${POST_TIME} Pakistan time (evening in the US)</span>
-        <input type="date" id="date" value="${esc(r ? r.date : date)}" ${posted ? 'disabled' : ''}></label>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <label class="f" style="flex:1 1 150px">Date<input type="date" id="date" value="${esc(r ? r.date : date)}" ${posted ? 'disabled' : ''}></label>
+        <label class="f" style="flex:1 1 150px">Time (Pakistan)<input type="time" id="time" value="${esc(r ? tOf(r) : (time || DEFAULT_TIME))}" ${posted ? 'disabled' : ''}></label>
+      </div>
+      ${posted ? '' : `<div class="slots" style="display:flex;gap:6px;flex-wrap:wrap">${SLOTS.map(t => `<button type="button" class="btn" data-slot="${t}" style="padding:5px 9px;font-size:12px">${fmtTime(t)}</button>`).join('')}</div>`}
+      <div class="time" id="ny"></div>
       <label class="f">Caption
         <textarea id="caption" ${posted ? 'readonly' : ''} placeholder="Hook line, reference, call to action, hashtags">${esc(r ? r.caption : '')}</textarea>
         <span class="count" id="count"></span></label>
@@ -330,6 +349,9 @@ function openEditor(r, date){
   const cap = $('#caption'), cnt = $('#count');
   const upd = () => { const n = cap.value.length; cnt.textContent = `${n.toLocaleString()} / ${MAX_CAPTION.toLocaleString()}`; cnt.classList.toggle('over', n > MAX_CAPTION); };
   cap.addEventListener('input', upd); upd();
+  const ny = () => { const d = $('#date').value, t = $('#time').value; $('#ny').textContent = d && t ? `Goes live ${nyTime(d, t)} in New York` : ''; };
+  $('#date').addEventListener('input', ny); $('#time').addEventListener('input', ny); ny();
+  document.querySelectorAll('[data-slot]').forEach(b => b.onclick = () => { $('#time').value = b.dataset.slot; ny(); });
   $('.scrim').onclick = closeEditor; $('#close').onclick = closeEditor; $('#cancel').onclick = closeEditor;
   document.addEventListener('keydown', escKey);
   const dz = $('#dz');
@@ -343,7 +365,7 @@ function openEditor(r, date){
   }
   const save = $('#save');
   if (save) save.onclick = async () => {
-    const body = { action: isNew ? 'create' : 'update', date: $('#date').value, caption: cap.value, hold: $('#hold').checked };
+    const body = { action: isNew ? 'create' : 'update', date: $('#date').value, time: $('#time').value || DEFAULT_TIME, caption: cap.value, hold: $('#hold').checked };
     if (!isNew) body.row = r.row;
     if (!body.date) return toast('Pick a date');
     if (cap.value.length > MAX_CAPTION) return toast('Caption is too long for Instagram');
@@ -351,7 +373,7 @@ function openEditor(r, date){
     save.disabled = true; save.textContent = file ? 'Uploading…' : 'Saving…';
     try {
       if (file){ body.data = await toB64(file); body.mime = file.type || 'video/mp4'; body.filename = cleanName(file.name, body.date); }
-      apply(await api(body)); closeEditor(); render(); toast(isNew ? `Scheduled for ${fmtShort(body.date)}` : 'Saved');
+      apply(await api(body)); closeEditor(); render(); toast(isNew ? `Scheduled for ${fmtShort(body.date)}, ${fmtTime(body.time)}` : 'Saved');
     } catch(e){ save.disabled = false; save.textContent = isNew ? 'Schedule' : 'Save'; if (e.message !== 'pin') toast(e.message); }
   };
   const del = $('#del');
