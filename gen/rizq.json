@@ -1,0 +1,64 @@
+{
+ "segs": [
+  {
+   "text": "How to increase your rizq in thirty seconds.",
+   "icon": "coin",
+   "pill": "rizq in 30 seconds",
+   "key": "s0"
+  },
+  {
+   "text": "Step one. Fear Allah when nobody is watching.",
+   "icon": "eye",
+   "pill": "1. taqwa",
+   "key": "s1"
+  },
+  {
+   "text": "Allah says: And whoever is mindful of Allah, He will make a way out for them, and provide for them from sources they could never imagine.",
+   "quote": {
+    "text": "And whoever is mindful of Allah, He will make a way out for them, and provide for them from sources they could never imagine.",
+    "ref": "Quran 65:2-3"
+   },
+   "key": "s2"
+  },
+  {
+   "text": "Step two. Trust Him more than your bank balance.",
+   "icon": "shield",
+   "pill": "2. tawakkul",
+   "key": "s3"
+  },
+  {
+   "text": "And whoever puts their trust in Allah, then He alone is sufficient for them.",
+   "quote": {
+    "text": "And whoever puts their trust in Allah, then He (alone) is sufficient for them.",
+    "ref": "Quran 65:3"
+   },
+   "key": "s4"
+  },
+  {
+   "text": "Step three. Call your family.",
+   "icon": "phone",
+   "pill": "3. family ties",
+   "key": "s5"
+  },
+  {
+   "text": "The Prophet, peace be upon him, said: Whoever loves that he be granted more wealth and that his lease of life be prolonged, then he should keep good relations with his kith and kin.",
+   "quote": {
+    "text": "Whoever loves that he be granted more wealth and that his lease of life be prolonged, then he should keep good relations with his Kith and kin.",
+    "ref": "Sahih al-Bukhari 5986"
+   },
+   "key": "s6"
+  },
+  {
+   "text": "Taqwa. Trust. Family. Start today.",
+   "icon": "check",
+   "pill": "start today",
+   "key": "s7"
+  },
+  {
+   "text": "Send this to someone who is worried about money.",
+   "icon": "send",
+   "pill": "send this",
+   "key": "s8"
+  }
+ ]
+}

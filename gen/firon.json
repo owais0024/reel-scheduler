@@ -1,0 +1,60 @@
+{
+ "segs": [
+  {
+   "text": "He had the strongest army on earth. And he drowned in one morning.",
+   "icon": "crown",
+   "pill": "Pharaoh",
+   "key": "s0"
+  },
+  {
+   "text": "Pharaoh called himself a god.",
+   "icon": "star",
+   "pill": "untouchable",
+   "key": "s1"
+  },
+  {
+   "text": "He enslaved a whole nation and killed their sons.",
+   "icon": "chain",
+   "pill": "tyranny",
+   "key": "s2"
+  },
+  {
+   "text": "Then Musa came to him with one message from Allah.",
+   "icon": "sparkle",
+   "pill": "one message",
+   "key": "s3"
+  },
+  {
+   "text": "Pharaoh mocked him, and chased him to the sea. And the sea split open.",
+   "icon": "split",
+   "pill": "the sea",
+   "key": "s4"
+  },
+  {
+   "text": "Musa crossed. Pharaoh followed. And the water closed over him.",
+   "icon": "close",
+   "pill": "too late",
+   "key": "s5"
+  },
+  {
+   "text": "Allah said to him: Today We will preserve your corpse so that you may become an example for those who come after you.",
+   "quote": {
+    "text": "Today We will preserve your corpse so that you may become an example for those who come after you.",
+    "ref": "Quran 10:92"
+   },
+   "key": "s6"
+  },
+  {
+   "text": "Power is a loan. Every Pharaoh falls.",
+   "icon": "fall",
+   "pill": "every Pharaoh falls",
+   "key": "s7"
+  },
+  {
+   "text": "Follow for more stories that wake you up.",
+   "icon": "send",
+   "pill": "follow",
+   "key": "s8"
+  }
+ ]
+}

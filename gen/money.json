@@ -1,0 +1,54 @@
+{
+ "segs": [
+  {
+   "text": "The perfect formula to make money. Islam gave it to us fourteen hundred years ago.",
+   "icon": "coin",
+   "pill": "the formula",
+   "key": "s0"
+  },
+  {
+   "text": "One. Earn it with your own hands.",
+   "icon": "hands",
+   "pill": "1. work",
+   "key": "s1"
+  },
+  {
+   "text": "Two. Never lie to make a sale.",
+   "icon": "check",
+   "pill": "2. honesty",
+   "key": "s2"
+  },
+  {
+   "text": "Three. Give some of it away.",
+   "icon": "heart",
+   "pill": "3. charity",
+   "key": "s3"
+  },
+  {
+   "text": "The Prophet, peace be upon him, said: Charity does not decrease wealth.",
+   "quote": {
+    "text": "Charity does not decrease wealth.",
+    "ref": "Sahih Muslim 2588"
+   },
+   "key": "s4"
+  },
+  {
+   "text": "Four. Leave the result to Allah.",
+   "icon": "shield",
+   "pill": "4. tawakkul",
+   "key": "s5"
+  },
+  {
+   "text": "Work. Honesty. Charity. Trust. That is the formula.",
+   "icon": "arrowup",
+   "pill": "the formula",
+   "key": "s6"
+  },
+  {
+   "text": "Send this to someone building a business.",
+   "icon": "send",
+   "pill": "send this",
+   "key": "s7"
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "segs": [
+  {
+   "text": "Fame feels like success. It might be destroying you.",
+   "icon": "star",
+   "pill": "fame",
+   "key": "s0"
+  },
+  {
+   "text": "The Prophet, peace be upon him, said: Two wolves free among sheep are no more destructive to them than a man's desire for wealth and honor is to his religion.",
+   "quote": {
+    "text": "Two wolves free among sheep are no more destructive to them than a man's desire for wealth and honor is to his religion.",
+    "ref": "Jami at-Tirmidhi 2376"
+   },
+   "key": "s1"
+  },
+  {
+   "text": "Two wolves. Inside one flock.",
+   "icon": "wolf",
+   "pill": "two wolves",
+   "key": "s2"
+  },
+  {
+   "text": "Chase likes, and you start living for people instead of Allah.",
+   "icon": "phone",
+   "pill": "living for likes",
+   "key": "s3"
+  },
+  {
+   "text": "Allah says: That eternal Home in the Hereafter We reserve only for those who seek neither tyranny nor corruption on the earth.",
+   "quote": {
+    "text": "That (eternal) Home in the Hereafter We reserve (only) for those who seek neither tyranny nor corruption on the earth.",
+    "ref": "Quran 28:83"
+   },
+   "key": "s4"
+  },
+  {
+   "text": "Do the work. Stay hidden. Let Allah raise you.",
+   "icon": "arrowup",
+   "pill": "stay hidden",
+   "key": "s5"
+  },
+  {
+   "text": "Follow for a daily reminder.",
+   "icon": "send",
+   "pill": "follow",
+   "key": "s6"
+  }
+ ]
+}

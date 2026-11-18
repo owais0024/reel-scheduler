@@ -1,0 +1,60 @@
+{
+ "segs": [
+  {
+   "text": "Lust never attacks all at once. It comes in steps.",
+   "icon": "fire",
+   "pill": "it comes in steps",
+   "key": "s0"
+  },
+  {
+   "text": "First, one look you tell yourself is harmless.",
+   "icon": "eye",
+   "pill": "1. the look",
+   "key": "s1"
+  },
+  {
+   "text": "Then a second look. Then the scroll.",
+   "icon": "phone",
+   "pill": "2. the scroll",
+   "key": "s2"
+  },
+  {
+   "text": "Then thoughts you cannot switch off at night.",
+   "icon": "moon",
+   "pill": "3. the thoughts",
+   "key": "s3"
+  },
+  {
+   "text": "Then you are doing the thing you swore you would never do.",
+   "icon": "cross",
+   "pill": "4. the fall",
+   "key": "s4"
+  },
+  {
+   "text": "That is why Allah did not only say don't do it. He said: Do not go near adultery. It is truly a shameful deed and an evil way.",
+   "quote": {
+    "text": "Do not go near adultery. It is truly a shameful deed and an evil way.",
+    "ref": "Quran 17:32"
+   },
+   "key": "s5"
+  },
+  {
+   "text": "Don't fight the last step. Cut the first one.",
+   "icon": "check",
+   "pill": "cut the first step",
+   "key": "s6"
+  },
+  {
+   "text": "Lower your gaze. Close the app. Make wudu.",
+   "icon": "shield",
+   "pill": "lower your gaze",
+   "key": "s7"
+  },
+  {
+   "text": "Send this to a brother who is fighting this. Quietly.",
+   "icon": "send",
+   "pill": "send it quietly",
+   "key": "s8"
+  }
+ ]
+}
