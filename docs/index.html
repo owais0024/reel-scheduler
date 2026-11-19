@@ -341,6 +341,7 @@ function openEditor(r, date, time){
     <div class="sfoot" id="foot">
       ${!isNew && !posted ? '<button class="btn danger" id="del">Delete</button>' : ''}<span class="spacer"></span>
       <button class="btn" id="cancel">${posted ? 'Close' : 'Cancel'}</button>
+      ${!isNew && !posted ? '<button class="btn" id="postnow">Post now</button>' : ''}
       ${posted ? '' : `<button class="btn primary" id="save">${isNew ? 'Schedule' : 'Save'}</button>`}
     </div>
   </aside>`;
@@ -375,6 +376,16 @@ function openEditor(r, date, time){
       if (file){ body.data = await toB64(file); body.mime = file.type || 'video/mp4'; body.filename = cleanName(file.name, body.date); }
       apply(await api(body)); closeEditor(); render(); toast(isNew ? `Scheduled for ${fmtShort(body.date)}, ${fmtTime(body.time)}` : 'Saved');
     } catch(e){ save.disabled = false; save.textContent = isNew ? 'Schedule' : 'Save'; if (e.message !== 'pin') toast(e.message); }
+  };
+  const pn = $('#postnow');
+  if (pn) pn.onclick = () => {
+    $('#foot').innerHTML = `<div class="confirm" style="background:var(--ready-bg);color:var(--ready-fg)">Post this reel to Instagram now? <span style="margin-right:auto"></span><button class="btn" id="pnNo">Not yet</button><button class="btn primary" id="pnYes">Post now</button></div>`;
+    $('#pnNo').onclick = () => openEditor(r);
+    $('#pnYes').onclick = async () => {
+      $('#pnYes').disabled = true; $('#pnYes').textContent = 'Posting… (1 to 3 min)';
+      try { apply(await api({ action:'postnow', row: r.row })); closeEditor(); render(); toast('Posted to Instagram'); }
+      catch(e){ if (e.message !== 'pin') { toast(e.message); openEditor(S.rows.find(x => x.row === r.row) || r); } }
+    };
   };
   const del = $('#del');
   if (del) del.onclick = () => {
